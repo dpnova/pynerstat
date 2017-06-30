@@ -83,5 +83,5 @@ class MinerStatService(Service):
     def startService(self) -> None:
         self.rig.start()
 
-    def stopService(self) -> None:
-        self.rig.stop()
+    async def stopService(self) -> None:
+        await self.rig.stop()

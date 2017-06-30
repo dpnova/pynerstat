@@ -1,4 +1,4 @@
-from twisted.internet.task import Clock, LoopingCall
+from twisted.internet.task import LoopingCall
 from twisted.internet import reactor
 from minerstat.utils import Config
 from twisted.internet.protocol import ProcessProtocol
@@ -26,15 +26,23 @@ class MinerProcessProtocol(ProcessProtocol):
     def processEnded(self, status: Failure):
         self.on_ended.callback(status.value)
 
+    def stop_it(self) -> defer.Deferred:
+        try:
+            self.transport.signalProcess("KILL")
+            return self.on_ended
+        except ProcessExitedAlready:
+            print("Process is already gone.")
+            return defer.succeed(None)
+
 
 class Rig:
     def __init__(
         self,
         config: Config,
-        clock: Clock = reactor
+        reactor=reactor
     ) -> None:
         self.config = config
-        self.clock = clock
+        self.reactor = reactor
         self._looper = LoopingCall(self.watchdog)
 
     def reboot(self):
@@ -53,9 +61,9 @@ class Rig:
         self._looper.start(2)
         self.start_miner()
 
-    def stop(self) -> None:
+    async def stop(self) -> None:
         self._looper.stop()
-        self.stop_miner()
+        await self.stop_miner()
 
     def update_progress_bar(self):
         pass
@@ -77,7 +85,7 @@ class Rig:
             self.config.path,
             "clients",
             self.config.client)
-        reactor.spawnProcess(
+        self.reactor.spawnProcess(
             self._process_protocol,
             os.path.join(path, "start.bash"),
             args=[self.config.client],
@@ -87,12 +95,9 @@ class Rig:
             callback=self.miner_ended,
             errback=self.miner_ended)
 
-    def stop_miner(self) -> None:
+    async def stop_miner(self) -> None:
         if self._process_protocol.connected:
-            try:
-                self._process_protocol.transport.signalProcess("KILL")
-            except ProcessExitedAlready:
-                print("Process is already gone.")
+            await self._process_protocol.stop_it()
 
     async def miner_ended(
             self, status: Union[ProcessDone, ProcessTerminated]):

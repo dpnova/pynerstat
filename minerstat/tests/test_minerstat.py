@@ -2,21 +2,26 @@ from twisted.trial import unittest
 from minerstat.service import MinerStatService
 from minerstat.rig import Rig
 from minerstat.utils import Config
+from twisted.internet import task, defer
+from mock import Mock
 
 
 class MinerStatServiceTest(unittest.TestCase):
 
     def setUp(self):
-        self.rig = Rig(Config.default())
+        self.clock = task.Clock()
+        self.clock.spawnProcess = Mock()
+        self.rig = Rig(Config.default(), reactor=self.clock)
         self.service = MinerStatService(self.rig)
 
     def test_init(self):
         MinerStatService(self.rig)
 
+    @defer.inlineCallbacks
     def test_start_stop(self):
         self.service.startService()
         self.assertTrue(self.service.rig._looper.running)
-        self.service.stopService()
+        yield defer.ensureDeferred(self.service.stopService())
         self.assertFalse(self.service.rig._looper.running)
 
 
