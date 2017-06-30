@@ -1,0 +1,15 @@
+
+# YOU CAN KEEP rig2 ITS A COMMAND! WILL REPLACED TO YOUR WORKER NAME!!
+-eworker rig2
+# THIS IS AN ALGO SETTING. IF YOU WANT TO USE SINGLE POOL JUST REPLACE IT!
+-epool exp-eu.dwarfpool.com:8018
+-ewal 0x9c2a8812fab070a19bf1a2159819b97e997ec4e4
+-epsw x
+#-dpool (2_COIN_POOL)
+#-dcoin (2_COIN)
+#-dwal (2_COIN_ADDRESS)
+#-dpsw x
+#-mode 0
+-mport 3333
+#-dcri (DCRI)
+-allcoins exp

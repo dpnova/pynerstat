@@ -1,0 +1,12 @@
+
+-eworker rig2
+-epool eu1.ethermine.org:4444
+-ewal 0xd3f3557f3b32c618c74477cfa1e41fe741d344ad
+-epsw x
+#-dpool (2_COIN_POOL)
+#-dcoin (2_COIN)
+#-dwal (2_COIN_ADDRESS)
+#-dpsw x
+#-mode 0
+#-dcri (DCRI)
+#
