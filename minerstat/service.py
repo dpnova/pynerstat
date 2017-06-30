@@ -1,4 +1,5 @@
 from twisted.application.service import Service
+from twisted.internet import defer
 from zope.interface import implementer
 from twisted.internet.interfaces import IProtocol
 from minerstat.rig import Rig
@@ -83,5 +84,5 @@ class MinerStatService(Service):
     def startService(self) -> None:
         self.rig.start()
 
-    async def stopService(self) -> None:
-        await self.rig.stop()
+    def stopService(self) -> None:
+        return defer.ensureDeferred(self.rig.stop())

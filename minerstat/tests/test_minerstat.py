@@ -21,7 +21,7 @@ class MinerStatServiceTest(unittest.TestCase):
     def test_start_stop(self):
         self.service.startService()
         self.assertTrue(self.service.rig._looper.running)
-        yield defer.ensureDeferred(self.service.stopService())
+        yield self.service.stopService()
         self.assertFalse(self.service.rig._looper.running)
 
 
