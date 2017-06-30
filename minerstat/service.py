@@ -1,15 +1,64 @@
 from twisted.application.service import Service
 from zope.interface import implementer
 from twisted.internet.interfaces import IProtocol
-from twisted.internet.protocol import ProcessProtocol
 from minerstat.rig import Rig
+from minerstat.utils import Config
+from urllib import parse
+import treq
+from typing import Dict, Optional
 
 
 @implementer(IProtocol)
-class MinerStateRemoteProtocol:
+class MinerStatRemoteProtocol:
+    def __init__(self, config: Config, treq=treq) -> None:
+        self.config = config
+        self.treq = treq
 
-    def algoinfo(self):
-        pass
+    def make_full_url(self, component: str) -> str:
+        return parse.urljoin(
+            self.config.api_url, component + ".php?"
+        ) + parse.urlencode(self.make_url_params())
+
+    def make_url_params(
+            self,
+            params: Optional[Dict[str, str]] = None
+    ) -> Dict[str, str]:
+        new_params = {
+            "token": self.config.accesskey,
+            "worker": self.config.worker
+        }
+        if params:
+            new_params.update(params)
+        return new_params
+
+    async def make_request(
+            self,
+            method: str,
+            resource: str,
+            params: Optional[Dict[str, str]] = None,
+            body: Optional[str] = None
+    ) -> str:
+        url = self.make_full_url(resource)
+        params = self.make_url_params()
+        response = await self.treq.request(
+            method=method,
+            url=url,
+            params=params,
+            body=body)
+        content = await response.content()
+        return content
+
+    async def get_request(
+            self,
+            resource,
+            params: Optional[Dict[str, str]] = None,
+    ) -> str:
+        content = await self.make_request("GET", resource, params)
+        return content
+
+    async def algoinfo(self) -> str:
+        content = await self.get_request("bestquery")
+        return content
 
     def dlconf(self):
         pass
@@ -27,11 +76,6 @@ class MinerStateRemoteProtocol:
         pass
 
 
-class MinerProcessProtocol(ProcessProtocol):
-
-    pass
-
-
 class MinerStatService(Service):
     def __init__(self, rig: Rig) -> None:
         self.rig = rig
@@ -39,5 +83,5 @@ class MinerStatService(Service):
     def startService(self) -> None:
         self.rig.start()
 
-    async def stopService(self) -> None:
-        await self.rig.stop()
+    def stopService(self) -> None:
+        self.rig.stop()

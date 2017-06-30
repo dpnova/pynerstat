@@ -6,10 +6,14 @@ from twisted.application.service import IServiceMaker
 
 from minerstat.service import MinerStatService
 from minerstat.rig import Rig
+from minerstat.utils import Config
 
 
 class Options(usage.Options):
-    optParameters = [["port", "p", 1235, "The port number to listen on."]]
+    optParameters = [
+        ["config", "c", "config.ini", "Load config from here."],
+        ["section", "s", "main", "Use this section of the config."]
+    ]
 
 
 @implementer(IServiceMaker, IPlugin)
@@ -22,7 +26,10 @@ class MinerServiceMaker(object):
         """
         Construct a minerstat server.
         """
-        rig = Rig()
+        config_path = options.get("config")  # Type: str
+        config_section = options.get("section")  # Type: str
+        config = Config.from_path(config_path, config_section)
+        rig = Rig(config)
         return MinerStatService(rig)
 
 
