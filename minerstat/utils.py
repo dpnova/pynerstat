@@ -44,7 +44,7 @@ class Config:
     @classmethod
     def default(cls):
         return cls(
-            client="XXXXX",
+            client="algo",
             accesskey="1234",
             worker="rig2",
             path=os.path.dirname(os.path.join(__file__, "..", "..")))

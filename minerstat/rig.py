@@ -9,7 +9,7 @@ from twisted.python.failure import Failure
 from twisted.internet import defer, task
 import subprocess
 import os
-from typing import Union
+from typing import Union, Iterable, Optional  # noqa
 from twisted.logger import Logger
 import asyncio
 from twisted.plugin import getPlugins
@@ -63,7 +63,7 @@ class Rig:
         self.reactor = reactor
         self._looper = LoopingCall(self.mainloop)
         self._coin_lock = asyncio.Lock()
-        self._current_coin = None  # Type: IMiner
+        self._current_coin = None  # type: Optional[IMiner]
 
     def reboot(self) -> None:
         """
@@ -87,10 +87,14 @@ class Rig:
         await self.stop_miner()
 
     async def load_configured_miner(self) -> IMiner:
-        miner_coins = getPlugins(IMiner)  # Type: List[IMiner]
+        miner_coins = list(getPlugins(IMiner))  # type: Iterable[IMiner]
         for coin in miner_coins:
+            print(coin.name, self.config.client)
             if coin.name == self.config.client:
+                with (await self._coin_lock):
+                    self._current_coin = coin
                 await self.remote.dlconf(coin)
+                return coin
         else:
             raise RuntimeError("No miner configured in global config.")
 
@@ -130,8 +134,11 @@ class Rig:
         self.log.info('------------------------ Linux Alpha ------------------------')  # noqa
 
     def start_miner(self) -> None:
+        if self._current_coin is None:
+            self.log.warning("Can't start miner that doesnt exist.")
+            return
         self._process_protocol = MinerProcessProtocol()
-        util = MinerUtils(coin, self.config)
+        util = MinerUtils(self._current_coin, self.config)
         path = util.miner_path()
         self.reactor.spawnProcess(
             self._process_protocol,

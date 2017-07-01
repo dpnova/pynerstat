@@ -1,7 +1,7 @@
 from zope.interface import implementer
 from twisted.internet.interfaces import IProtocol
 from minerstat.utils import Config
-from typing import Tuple
+from typing import Tuple, Iterable  # noqa
 from urllib import parse
 import treq
 from typing import Dict, Optional
@@ -103,7 +103,7 @@ class MinerStatRemoteProtocol:
             "control",
             params={"os": platform.system().lower()}
         )
-        miner_coins = getPlugins(IMiner)  # Type: List[IMiner]
+        miner_coins = getPlugins(IMiner)  # type: Iterable[IMiner]
         for coin in miner_coins:
             if coin.command in content:
                 return Command(coin.command, coin)

@@ -15,8 +15,7 @@ class EthClaymoreMiner:
 
 @implementer(IPlugin, IMiner)
 class AlgoClaymoreMiner(EthClaymoreMiner):
-
-    pass
+    name = "algo"
 
 
 @implementer(IPlugin, IMiner)
