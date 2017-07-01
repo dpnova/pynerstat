@@ -30,6 +30,7 @@ class Config:
         self.coin = coin
         self.file = file
         self.path = path
+        self.api_base = api_base
 
     @classmethod
     def from_configparser(cls, parser: ConfigParser, section: str):
