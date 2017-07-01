@@ -11,6 +11,9 @@ import subprocess
 import os
 from typing import Union
 from twisted.logger import Logger
+import asyncio
+from twisted.plugin import getPlugins
+from minerstat.miners.base import IMiner, MinerUtils
 
 
 class MinerProcessProtocol(ProcessProtocol):
@@ -46,6 +49,7 @@ class MinerProcessProtocol(ProcessProtocol):
 
 
 class Rig:
+
     log = Logger()
 
     def __init__(
@@ -55,10 +59,13 @@ class Rig:
         reactor=reactor
     ) -> None:
         self.config = config
+        self.remote = remote
         self.reactor = reactor
         self._looper = LoopingCall(self.mainloop)
+        self._coin_lock = asyncio.Lock()
+        self._current_coin = None  # Type: IMiner
 
-    def reboot(self):
+    def reboot(self) -> None:
         """
         Reboot the service.
 
@@ -69,17 +76,23 @@ class Rig:
         output = process.communicate()[0]
         print(output)
 
-    def start(self) -> None:
+    async def start(self) -> None:
         self.header()
-        self._looper.start(2)
+        await self.load_configured_miner()
         self.start_miner()
+        self._looper.start(20)
 
     async def stop(self) -> None:
         self._looper.stop()
         await self.stop_miner()
 
-    def update_progress_bar(self):
-        pass
+    async def load_configured_miner(self) -> IMiner:
+        miner_coins = getPlugins(IMiner)  # Type: List[IMiner]
+        for coin in miner_coins:
+            if coin.name == self.config.client:
+                await self.remote.dlconf(coin)
+        else:
+            raise RuntimeError("No miner configured in global config.")
 
     def watchdog(self):
         pass
@@ -94,8 +107,17 @@ class Rig:
     def check_algorithms(self) -> None:
         """call to self.remote.check_algo"""
 
-    def check_remote_commands(self) -> None:
+    async def setup_miner(self, coin: IMiner) -> None:
+        with (await self._coin_lock):
+            await self.stop_miner()
+            self._current_coin = coin
+            self.start_miner()
+
+    async def check_remote_commands(self) -> None:
         """call to self.dispatch_remote"""
+        command = await self.remote.fetch_remote_command()
+        if command and command.coin:
+            await self.setup_miner(command.coin)
 
     def collect_miner_data(self) -> str:
         """hit the subprocess protocol to get buffers"""
@@ -109,10 +131,8 @@ class Rig:
 
     def start_miner(self) -> None:
         self._process_protocol = MinerProcessProtocol()
-        path = os.path.join(
-            self.config.path,
-            "clients",
-            self.config.client)
+        util = MinerUtils(coin, self.config)
+        path = util.miner_path()
         self.reactor.spawnProcess(
             self._process_protocol,
             os.path.join(path, "start.bash"),

@@ -30,9 +30,6 @@ class ConfigTest(unittest.TestCase):
         client=1234
         accesskey=foo
         worker=rig2
-        db=eth_conf
-        coin=eth
-        file=foo.txt
         path=foobar
         """)
         config = Config.from_path("config.ini", "main")

@@ -8,7 +8,7 @@ class MinerStatService(Service):
         self.rig = rig
 
     def startService(self) -> None:
-        self.rig.start()
+        return defer.ensureDeferred(self.rig.start())
 
     def stopService(self) -> None:
         return defer.ensureDeferred(self.rig.stop())

@@ -1,4 +1,4 @@
-from typing import Generator, Optional
+from typing import Generator
 from twisted.internet import defer
 from configparser import ConfigParser
 import os.path
@@ -18,17 +18,12 @@ class Config:
             client: str,
             accesskey: str,
             worker: str,
+            path: str,
             api_base: str = "http://minerstat.com/",
-            db: Optional[str] = None,
-            coin: Optional[str] = None,
-            file: Optional[str] = None,
-            path: Optional[str] = None) -> None:
+    ) -> None:
         self.client = client
         self.accesskey = accesskey
         self.worker = worker
-        self.db = db
-        self.coin = coin
-        self.file = file
         self.path = path
         self.api_base = api_base
 
@@ -52,7 +47,4 @@ class Config:
             client="XXXXX",
             accesskey="1234",
             worker="rig2",
-            db="eth_conf",
-            coin="eth",
-            file=os.path.basename(os.path.__file__),
             path=os.path.dirname(os.path.join(__file__, "..", "..")))

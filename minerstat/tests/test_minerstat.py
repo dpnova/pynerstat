@@ -1,9 +1,11 @@
 from twisted.trial import unittest
 from minerstat.service import MinerStatService
 from minerstat.rig import Rig
+from minerstat.remote import MinerStatRemoteProtocol
 from minerstat.utils import Config
 from twisted.internet import task, defer
-from mock import Mock
+from mock import Mock, create_autospec
+import treq
 
 
 class MinerStatServiceTest(unittest.TestCase):
@@ -11,7 +13,10 @@ class MinerStatServiceTest(unittest.TestCase):
     def setUp(self):
         self.clock = task.Clock()
         self.clock.spawnProcess = Mock()
-        self.rig = Rig(Config.default(), reactor=self.clock)
+        treq_mock = create_autospec(treq)
+        self.config = Config.default()
+        self.remote = MinerStatRemoteProtocol(self.config, treq_mock)
+        self.rig = Rig(self.config, remote=self.remote, reactor=self.clock)
         self.service = MinerStatService(self.rig)
 
     def test_init(self):

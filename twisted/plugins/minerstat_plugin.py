@@ -8,6 +8,28 @@ from minerstat.service import MinerStatService
 from minerstat.rig import Rig
 from minerstat.utils import Config
 
+from minerstat.miners.claymore import EthClaymoreMiner
+from minerstat.miners.claymore import EtcClaymoreMiner
+from minerstat.miners.claymore import ExpClaymoreMiner
+from minerstat.miners.claymore import MusicClaymoreMiner
+from minerstat.miners.claymore import UbqClaymoreMiner
+from minerstat.miners.claymore import ZecClaymoreMiner
+from minerstat.miners.claymore import AlgoClaymoreMiner
+
+
+from minerstat.miners.ewbf import EWBFZecMiner
+from minerstat.miners.sgminer import SGMiner
+
+eth = EthClaymoreMiner()
+etc = EtcClaymoreMiner()
+exp = ExpClaymoreMiner()
+music = MusicClaymoreMiner()
+ubq = UbqClaymoreMiner()
+zec = ZecClaymoreMiner()
+ewbf = EWBFZecMiner()
+sg = SGMiner()
+algo = AlgoClaymoreMiner()
+
 
 class Options(usage.Options):
     optParameters = [
@@ -17,7 +39,7 @@ class Options(usage.Options):
 
 
 @implementer(IServiceMaker, IPlugin)
-class MinerServiceMaker(object):
+class MinerServiceMaker:
     tapname = "minerstat-linux"
     description = "minerstat-linux implmentation in python"
     options = Options
