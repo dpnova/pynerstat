@@ -1,7 +1,7 @@
 from zope.interface import implementer
 from twisted.internet.interfaces import IProtocol
 from minerstat.utils import Config
-from typing import Tuple, Iterable  # noqa
+from typing import Tuple
 from urllib import parse
 import treq
 from typing import Dict, Optional
@@ -11,6 +11,7 @@ import platform
 from twisted.logger import Logger
 from twisted.plugin import getPlugins
 from minerstat.miners.base import IMiner, MinerUtils
+from minerstat.miners.claymore import AlgoClaymoreMiner
 
 
 class Command:
@@ -79,7 +80,8 @@ class MinerStatRemoteProtocol:
     async def dlconf(self, coin: IMiner) -> None:
         content = await self.get_request("getresponse", params={
             "db": coin.db, "action": "config",
-            "coin": coin.coin, "algo": coin.algo})
+            "coin": coin.coin,
+            "algo": "yes" if isinstance(coin, AlgoClaymoreMiner) else "no"})
 
         open(MinerUtils(coin, self.config).config_path(), 'w').write(content)
 
@@ -103,7 +105,7 @@ class MinerStatRemoteProtocol:
             "control",
             params={"os": platform.system().lower()}
         )
-        miner_coins = getPlugins(IMiner)  # type: Iterable[IMiner]
+        miner_coins = getPlugins(IMiner)  # Type: List[IMiner]
         for coin in miner_coins:
             if coin.command in content:
                 return Command(coin.command, coin)

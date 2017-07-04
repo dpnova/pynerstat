@@ -22,6 +22,10 @@ class MinerProcessProtocol(ProcessProtocol):
 
     def __init__(self):
         self.on_ended = defer.Deferred()
+        self.on_started = defer.Deferred()
+
+    def connectionMade(self):
+        self.on_started.callback(None)
 
     def outReceived(self, data):
         print(data)
@@ -76,10 +80,11 @@ class Rig:
         output = process.communicate()[0]
         print(output)
 
-    async def start(self) -> None:
+    async def start(self) -> defer.Deferred:
         self.header()
         await self.load_configured_miner()
-        self.start_miner()
+        await self.start_miner()
+        await asyncio.sleep(1)
         self._looper.start(20)
 
     async def stop(self) -> None:
@@ -87,9 +92,8 @@ class Rig:
         await self.stop_miner()
 
     async def load_configured_miner(self) -> IMiner:
-        miner_coins = list(getPlugins(IMiner))  # type: Iterable[IMiner]
+        miner_coins = getPlugins(IMiner)  # type: Iterable[IMiner]
         for coin in miner_coins:
-            print(coin.name, self.config.client)
             if coin.name == self.config.client:
                 with (await self._coin_lock):
                     self._current_coin = coin
@@ -101,14 +105,14 @@ class Rig:
     def watchdog(self):
         pass
 
-    def mainloop(self) -> None:
+    async def mainloop(self) -> None:
         data = self.collect_miner_data()
-        self.send_logs_to_server(data)
-        self.check_algorithms()
-        self.check_remote_commands()
+        await self.send_logs_to_server(data)
+        await self.check_algorithms()
+        await self.check_remote_commands()
         self.watchdog()
 
-    def check_algorithms(self) -> None:
+    async def check_algorithms(self) -> None:
         """call to self.remote.check_algo"""
 
     async def setup_miner(self, coin: IMiner) -> None:
@@ -125,15 +129,16 @@ class Rig:
 
     def collect_miner_data(self) -> str:
         """hit the subprocess protocol to get buffers"""
+        return ""
 
-    def send_logs_to_server(self, data: str) -> None:
+    async def send_logs_to_server(self, data: str) -> None:
         """use self.remote.send_logs"""
 
     def header(self):
         self.log.info('----------------------- minerstat.com --------------------------')  # noqa
         self.log.info('------------------------ Linux Alpha ------------------------')  # noqa
 
-    def start_miner(self) -> None:
+    async def start_miner(self) -> None:
         if self._current_coin is None:
             self.log.warning("Can't start miner that doesnt exist.")
             return
@@ -149,6 +154,7 @@ class Rig:
         self._process_protocol.on_ended.addCallbacks(
             callback=self.miner_ended,
             errback=self.miner_ended)
+        await self._process_protocol.on_started
 
     async def stop_miner(self) -> None:
         if self._process_protocol.connected:

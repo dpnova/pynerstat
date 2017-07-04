@@ -6,6 +6,7 @@ from minerstat.utils import Config
 from twisted.internet import task, defer
 from mock import Mock, create_autospec
 import treq
+import os
 
 
 class MinerStatServiceTest(unittest.TestCase):
@@ -14,7 +15,15 @@ class MinerStatServiceTest(unittest.TestCase):
         self.clock = task.Clock()
         self.clock.spawnProcess = Mock()
         treq_mock = create_autospec(treq)
+        response_mock = Mock()
+        response_mock.content.return_value = defer.succeed("")
+        treq_mock.request.return_value = defer.succeed(response_mock)
         self.config = Config.default()
+        self.config.path = "./"
+        try:
+            os.makedirs("clients/algo")
+        except FileExistsError:
+            pass
         self.remote = MinerStatRemoteProtocol(self.config, treq_mock)
         self.rig = Rig(self.config, remote=self.remote, reactor=self.clock)
         self.service = MinerStatService(self.rig)
