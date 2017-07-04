@@ -7,6 +7,7 @@ from twisted.application.service import IServiceMaker
 from minerstat.service import MinerStatService
 from minerstat.rig import Rig
 from minerstat.utils import Config
+from minerstat.remote import MinerStatRemoteProtocol
 
 from minerstat.miners.claymore import EthClaymoreMiner
 from minerstat.miners.claymore import EtcClaymoreMiner
@@ -51,7 +52,8 @@ class MinerServiceMaker:
         config_path = options.get("config")  # Type: str
         config_section = options.get("section")  # Type: str
         config = Config.from_path(config_path, config_section)
-        rig = Rig(config)
+        remote = MinerStatRemoteProtocol(config)
+        rig = Rig(config, remote)
         return MinerStatService(rig)
 
 

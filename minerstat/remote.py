@@ -60,7 +60,7 @@ class MinerStatRemoteProtocol:
             url=url,
             params=params,
             body=body)
-        content = await response.content()
+        content = await response.text()
         return content
 
     async def get_request(

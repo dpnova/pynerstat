@@ -84,8 +84,7 @@ class Rig:
         self.header()
         await self.load_configured_miner()
         await self.start_miner()
-        await asyncio.sleep(1)
-        self._looper.start(20)
+        self._looper.start(1).addErrback(self.log.error)
 
     async def stop(self) -> None:
         self._looper.stop()
@@ -119,7 +118,7 @@ class Rig:
         with (await self._coin_lock):
             await self.stop_miner()
             self._current_coin = coin
-            self.start_miner()
+            await self.start_miner()
 
     async def check_remote_commands(self) -> None:
         """call to self.dispatch_remote"""
@@ -164,5 +163,7 @@ class Rig:
     def miner_ended(
             self, status: Union[ProcessDone, ProcessTerminated]):
         self.log.info("Got satus from ending miner. {status}", status=status)
-        yield task.deferLater(self.reactor, 1, self.start_miner)
+        yield task.deferLater(
+            self.reactor, 1,
+            lambda: defer.ensureDeferred(self.start_miner()))
         self.log.info("Started miner: {miner}", miner=self.config.client)
