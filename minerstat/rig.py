@@ -65,7 +65,8 @@ class Rig:
         self.config = config
         self.remote = remote
         self.reactor = reactor
-        self._looper = LoopingCall(self.mainloop)
+        self._looper = LoopingCall(
+            lambda: defer.ensureDeferred(self.mainloop()))
         self._coin_lock = asyncio.Lock()
         self._current_coin = None  # type: Optional[IMiner]
 
@@ -80,7 +81,7 @@ class Rig:
         output = process.communicate()[0]
         print(output)
 
-    async def start(self) -> defer.Deferred:
+    async def start(self) -> None:
         self.header()
         await self.load_configured_miner()
         await self.start_miner()
@@ -101,15 +102,11 @@ class Rig:
         else:
             raise RuntimeError("No miner configured in global config.")
 
-    def watchdog(self):
-        pass
-
     async def mainloop(self) -> None:
         data = self.collect_miner_data()
         await self.send_logs_to_server(data)
         await self.check_algorithms()
         await self.check_remote_commands()
-        self.watchdog()
 
     async def check_algorithms(self) -> None:
         """call to self.remote.check_algo"""

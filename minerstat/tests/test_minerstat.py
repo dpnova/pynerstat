@@ -16,7 +16,7 @@ class MinerStatServiceTest(unittest.TestCase):
         self.clock.spawnProcess = Mock()
         treq_mock = create_autospec(treq)
         response_mock = Mock()
-        response_mock.content.return_value = defer.succeed("")
+        response_mock.text.return_value = defer.succeed("")
         treq_mock.request.return_value = defer.succeed(response_mock)
         self.config = Config.default()
         self.config.path = "./"
@@ -26,6 +26,8 @@ class MinerStatServiceTest(unittest.TestCase):
             pass
         self.remote = MinerStatRemoteProtocol(self.config, treq_mock)
         self.rig = Rig(self.config, remote=self.remote, reactor=self.clock)
+        self.rig.start = Mock(return_value=defer.succeed(None))
+        self.rig.stop = Mock(return_value=defer.succeed(None))
         self.service = MinerStatService(self.rig)
 
     def test_init(self):
@@ -34,9 +36,9 @@ class MinerStatServiceTest(unittest.TestCase):
     @defer.inlineCallbacks
     def test_start_stop(self):
         yield self.service.startService()
-        self.assertTrue(self.service.rig._looper.running)
+        self.service.rig.start.assert_called_with()
         yield self.service.stopService()
-        self.assertFalse(self.service.rig._looper.running)
+        self.service.rig.stop.assert_called_with()
 
 
 class MinerStatRemoteProtocolTest(unittest.TestCase):
