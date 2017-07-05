@@ -160,3 +160,4 @@ ENV/
 
 # mypy
 .mypy_cache/
+config.ini

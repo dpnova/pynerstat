@@ -30,8 +30,8 @@ class MinerStatRemoteProtocol:
 
     def make_full_url(self, component: str) -> str:
         return parse.urljoin(
-            self.config.api_base, component + ".php?"
-        ) + parse.urlencode(self.make_url_params())
+            self.config.api_base, component + ".php"
+        )
 
     def make_url_params(
             self,
@@ -54,7 +54,9 @@ class MinerStatRemoteProtocol:
     ) -> str:
         """Make a request to the minerstat service."""
         url = self.make_full_url(resource)
-        params = self.make_url_params()
+        params = self.make_url_params(params=params)
+        self.log.debug('Fetching: {0}'.format(url))
+        self.log.debug('Fetching params: {0}'.format(str(params.items())))
         response = await self.treq.request(
             method=method,
             url=url,
@@ -79,10 +81,12 @@ class MinerStatRemoteProtocol:
 
     async def dlconf(self, coin: IMiner) -> None:
         content = await self.get_request("getresponse", params={
-            "db": coin.db, "action": "config",
+            "db": coin.db,
+            "action": "config",
             "coin": coin.coin,
             "algo": "yes" if isinstance(coin, AlgoClaymoreMiner) else "no"})
-
+        self.log.debug("writing config path: {0}".format(
+            MinerUtils(coin, self.config).config_path()))
         open(MinerUtils(coin, self.config).config_path(), 'w').write(content)
 
     async def send_log(self, res_data) -> None:
