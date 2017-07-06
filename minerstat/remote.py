@@ -1,17 +1,17 @@
 from zope.interface import implementer
 from twisted.internet.interfaces import IProtocol
 from minerstat.utils import Config
-from typing import Tuple
+from typing import Tuple, Union
 from urllib import parse
 import treq
 from typing import Dict, Optional
-import json
-import asyncio
 import platform
 from twisted.logger import Logger
 from twisted.plugin import getPlugins
 from minerstat.miners.base import IMiner, MinerUtils
 from minerstat.miners.claymore import AlgoClaymoreMiner
+from twisted.internet import defer
+from urllib.parse import urlencode
 
 
 class Command:
@@ -50,7 +50,7 @@ class MinerStatRemoteProtocol:
             method: str,
             resource: str,
             params: Optional[Dict[str, str]] = None,
-            body: Optional[str] = None
+            body: Optional[Union[str, Dict[str, str]]] = None
     ) -> str:
         """Make a request to the minerstat service."""
         url = self.make_full_url(resource)
@@ -61,7 +61,8 @@ class MinerStatRemoteProtocol:
             method=method,
             url=url,
             params=params,
-            body=body)
+            body=urlencode(body) if body else None,
+            browser_like_redirects=True)
         content = await response.text()
         return content
 
@@ -90,25 +91,36 @@ class MinerStatRemoteProtocol:
         open(MinerUtils(coin, self.config).config_path(), 'w').write(content)
 
     async def send_log(self, res_data) -> None:
-        await self.make_request(
-            "POST", "getstat",
-            body=json.dumps({"mes": res_data}))
-        self.log.info("Package sent.")
-        self.log.debug("Package sent: {data}", data=res_data)
+        try:
+            await self.make_request(
+                "POST", "getstat",
+                body={"mes": res_data})
+            self.log.info("Package sent.")
+            self.log.debug("Package sent: {data}", data=repr(res_data))
+        except:
+            pass
 
-    async def algo_check(self) -> None:
+    async def algo_check(self) -> Tuple[str, str, str]:
         futs = [
             self.get_request("bestquerytext"),
             self.get_request("bestquery"),
             self.get_request("dualresponse")
         ]
-        bq, b, dr = await asyncio.gather(*futs)
+        bqt, bq, dr = await defer.DeferredList([
+            defer.ensureDeferred(f) for f in futs])
+        return (bqt, bq, dr)
 
-    async def fetch_remote_command(self) -> Optional[Command]:
+    async def fetch_remote_command(self, coin: IMiner) -> Optional[Command]:
         content = await self.get_request(
             "control",
-            params={"os": platform.system().lower()}
+            params={
+                "token": "{}.{}".format(
+                    self.config.accesskey,
+                    self.config.worker),
+                "miner": coin.name,
+                "os":platform.system().lower()},
         )
+        self.log.debug("remote command: {}".format(repr(content)))
         miner_coins = getPlugins(IMiner)  # Type: List[IMiner]
         for coin in miner_coins:
             if coin.command in content:
@@ -116,3 +128,18 @@ class MinerStatRemoteProtocol:
         if "REBOOT" in content:
             return Command("REBOOT", None)
         return None
+
+    async def announce(self, coin: IMiner) -> str:
+        content = await self.make_request(
+            "POST",
+            "control",
+            params={
+                "token": "{}.{}".format(
+                    self.config.accesskey,
+                    self.config.worker),
+                "miner": coin.name,
+                "os":platform.system().lower() },
+            body={"mes": ""}
+        )
+        print("IN ANNOUNCE", content)
+        return content

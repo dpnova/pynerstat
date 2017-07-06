@@ -12,6 +12,9 @@ class IMiner(Interface):
     command = Attribute("Command used to switch to this.")  # Type: str
     execute = Attribute("The executable for the miner.")  # Type: str
 
+    def fetch_logs():  # noqa
+        """Fetch logs from the process."""
+
 
 class MinerUtils:
 
@@ -23,7 +26,7 @@ class MinerUtils:
         return os.path.join(
             self.config.path,
             "clients",
-            self.coin.name)
+            self.coin.folder_name)
 
     def config_path(self) -> str:
         return os.path.join(

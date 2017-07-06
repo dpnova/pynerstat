@@ -14,6 +14,7 @@ from twisted.logger import Logger
 import asyncio
 from twisted.plugin import getPlugins
 from minerstat.miners.base import IMiner, MinerUtils
+from minerstat.miners.claymore import AlgoClaymoreMiner
 
 
 class MinerProcessProtocol(ProcessProtocol):
@@ -84,8 +85,10 @@ class Rig:
     async def start(self) -> None:
         self.header()
         await self.load_configured_miner()
+        self.log.info("About to announce.")
+        await self.remote.announce(self._current_coin)
         await self.start_miner()
-        self._looper.start(1).addErrback(self.log.error)
+        self._looper.start(20).addErrback(self.log.error)
 
     async def stop(self) -> None:
         self._looper.stop()
@@ -96,6 +99,9 @@ class Rig:
         for coin in miner_coins:
             if coin.name == self.config.client:
                 with (await self._coin_lock):
+                    self.log.debug(
+                        "Setting current coin to {0}"
+                        .format(coin.name))
                     self._current_coin = coin
                 await self.remote.dlconf(coin)
                 return coin
@@ -103,13 +109,20 @@ class Rig:
             raise RuntimeError("No miner configured in global config.")
 
     async def mainloop(self) -> None:
-        data = self.collect_miner_data()
+        self.log.debug("About to get miner data.")
+        data = await self.collect_miner_data()
+        self.log.debug("About send logs to server.")
         await self.send_logs_to_server(data)
-        await self.check_algorithms()
+        self.log.debug("About to check algorithms.")
+        if isinstance(self._current_coin, AlgoClaymoreMiner):
+            await self.check_algorithms()
+        self.log.debug("About to check remote commands.")
         await self.check_remote_commands()
 
     async def check_algorithms(self) -> None:
         """call to self.remote.check_algo"""
+        bqt, bq, dr = await self.remote.algo_check()
+        print("check algorithms", bqt, bq, dr)
 
     async def setup_miner(self, coin: IMiner) -> None:
         with (await self._coin_lock):
@@ -119,16 +132,19 @@ class Rig:
 
     async def check_remote_commands(self) -> None:
         """call to self.dispatch_remote"""
-        command = await self.remote.fetch_remote_command()
-        if command and command.coin:
+        command = await self.remote.fetch_remote_command(self._current_coin)
+        if command and command.coin and \
+                (command.coin.name != self._current_coin.name):
+            import pdb;pdb.set_trace()
             await self.setup_miner(command.coin)
 
-    def collect_miner_data(self) -> str:
+    async def collect_miner_data(self) -> str:
         """hit the subprocess protocol to get buffers"""
-        return ""
+        return await self._current_coin.fetch_logs()
 
     async def send_logs_to_server(self, data: str) -> None:
         """use self.remote.send_logs"""
+        await self.remote.send_log(data)
 
     def header(self):
         self.log.info('----------------------- minerstat.com --------------------------')  # noqa
