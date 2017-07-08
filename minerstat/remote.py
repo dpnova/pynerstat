@@ -11,7 +11,6 @@ from twisted.plugin import getPlugins
 from minerstat.miners.base import IMiner, MinerUtils
 from minerstat.miners.claymore import AlgoClaymoreMiner
 from twisted.internet import defer
-from urllib.parse import urlencode
 
 
 class Command:
@@ -50,18 +49,21 @@ class MinerStatRemoteProtocol:
             method: str,
             resource: str,
             params: Optional[Dict[str, str]] = None,
-            body: Optional[Union[str, Dict[str, str]]] = None
+            headers: Optional[Dict[str, str]] = None,
+            data: Optional[Union[str, Dict[str, str]]] = None
     ) -> str:
         """Make a request to the minerstat service."""
         url = self.make_full_url(resource)
         params = self.make_url_params(params=params)
-        self.log.debug('Fetching: {0}'.format(url))
-        self.log.debug('Fetching params: {0}'.format(str(params.items())))
+        self.log.debug(
+            'Fetching: {0}:  {1} with params: {2}'.format(
+                method, url, str(params.items())))
         response = await self.treq.request(
             method=method,
             url=url,
             params=params,
-            body=urlencode(body) if body else None,
+            data=data,
+            headers=headers,
             browser_like_redirects=True)
         content = await response.text()
         return content
@@ -91,14 +93,13 @@ class MinerStatRemoteProtocol:
         open(MinerUtils(coin, self.config).config_path(), 'w').write(content)
 
     async def send_log(self, res_data) -> None:
-        try:
-            await self.make_request(
-                "POST", "getstat",
-                body={"mes": res_data})
-            self.log.info("Package sent.")
-            self.log.debug("Package sent: {data}", data=repr(res_data))
-        except:
-            pass
+        if not res_data:
+            return
+        await self.make_request(
+            "POST", "getstat",
+            data={"mes": res_data})
+        self.log.info("Package sent.")
+        self.log.debug("Package sent: {data}", data=repr(res_data))
 
     async def algo_check(self) -> Tuple[str, str, str]:
         futs = [
@@ -118,7 +119,7 @@ class MinerStatRemoteProtocol:
                     self.config.accesskey,
                     self.config.worker),
                 "miner": coin.name,
-                "os":platform.system().lower()},
+                "os": platform.system().lower()},
         )
         self.log.debug("remote command: {}".format(repr(content)))
         miner_coins = getPlugins(IMiner)  # Type: List[IMiner]
@@ -138,8 +139,7 @@ class MinerStatRemoteProtocol:
                     self.config.accesskey,
                     self.config.worker),
                 "miner": coin.name,
-                "os":platform.system().lower() },
-            body={"mes": ""}
+                "os": platform.system().lower()},
+            data={"mes": ""}
         )
-        print("IN ANNOUNCE", content)
         return content

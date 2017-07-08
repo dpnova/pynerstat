@@ -29,7 +29,8 @@ class MinerProcessProtocol(ProcessProtocol):
         self.on_started.callback(None)
 
     def outReceived(self, data):
-        print(data)
+        pass
+        #print(data)
 
     def errReceived(self, data):
         print(data)

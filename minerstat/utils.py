@@ -19,7 +19,7 @@ class Config:
             accesskey: str,
             worker: str,
             path: str,
-            api_base: str = "http://minerstat.com/",
+            api_base: str = "https://minerstat.com/",
     ) -> None:
         self.client = client
         self.accesskey = accesskey
