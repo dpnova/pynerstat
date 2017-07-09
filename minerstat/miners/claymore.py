@@ -23,8 +23,7 @@ class EthClaymoreMiner:
         if res:
             text = await res.content()
             return text
-        else:
-            return bytes()
+        return bytes()
 
 
 @implementer(IPlugin, IMiner)
