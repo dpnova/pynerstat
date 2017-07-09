@@ -90,10 +90,12 @@ class MinerStatRemoteProtocol:
             "algo": "yes" if isinstance(coin, AlgoClaymoreMiner) else "no"})
         self.log.debug("writing config path: {0}".format(
             MinerUtils(coin, self.config).config_path()))
-        open(MinerUtils(coin, self.config).config_path(), 'w').write(content)
+        open(MinerUtils(coin, self.config).config_path(), 'w').write(
+            coin.config_template.format(content))
 
     async def send_log(self, res_data) -> None:
         if not res_data:
+            self.log.warn("Logs for server are empty now.")
             return
         await self.make_request(
             "POST", "getstat",
@@ -115,7 +117,7 @@ class MinerStatRemoteProtocol:
         content = await self.get_request(
             "control",
             params={
-                "token": "{}.{}".format(
+                "worker": "{}.{}".format(
                     self.config.accesskey,
                     self.config.worker),
                 "miner": coin.name,
@@ -135,7 +137,7 @@ class MinerStatRemoteProtocol:
             "POST",
             "control",
             params={
-                "token": "{}.{}".format(
+                "worker": "{}.{}".format(
                     self.config.accesskey,
                     self.config.worker),
                 "miner": coin.name,

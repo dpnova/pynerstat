@@ -11,6 +11,7 @@ class IMiner(Interface):
     coin = Attribute("Which coin param to send the miner.")  # Type: str
     command = Attribute("Command used to switch to this.")  # Type: str
     execute = Attribute("The executable for the miner.")  # Type: str
+    config_template = Attribute('Config template to save into.')  # type: str
 
     def fetch_logs():  # noqa
         """Fetch logs from the process."""

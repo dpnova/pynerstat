@@ -26,11 +26,11 @@ class MinerProcessProtocol(ProcessProtocol):
         self.on_started = defer.Deferred()
 
     def connectionMade(self):
+        self.log.debug("Miner started.")
         self.on_started.callback(None)
 
     def outReceived(self, data):
-        pass
-        #print(data)
+        print(data)
 
     def errReceived(self, data):
         print(data)
@@ -136,7 +136,6 @@ class Rig:
         command = await self.remote.fetch_remote_command(self._current_coin)
         if command and command.coin and \
                 (command.coin.name != self._current_coin.name):
-            import pdb;pdb.set_trace()
             await self.setup_miner(command.coin)
 
     async def collect_miner_data(self) -> str:

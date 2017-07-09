@@ -12,3 +12,4 @@ class SGMiner:
     coin = ""
     command = "SWITCHTOSGGM"
     execute = "sgminer-gm"
+    config_template = "{0}"

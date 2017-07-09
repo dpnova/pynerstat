@@ -17,6 +17,7 @@ class EthClaymoreMiner:
     coin = "eth"
     command = "SWITCHTOETH"
     execute = "start.bash"
+    config_template = "{0}"
 
     async def fetch_logs(self) -> bytes:
         res = await treq.get("http://localhost:3333").addErrback(self.log.info)
