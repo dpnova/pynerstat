@@ -8,9 +8,12 @@ import pytz
 import json
 from typing import Awaitable
 from twisted.python import failure
+from twisted.logger import Logger
 
 
 class EWBFProtocol(protocol.Protocol):
+
+    log = Logger()
 
     def __init__(self) -> None:
         self._response_d = defer.Deferred()
@@ -34,11 +37,11 @@ class EWBFProtocol(protocol.Protocol):
         return
 
     def connectionMade(self) -> None:
-        print("CONNECTION WAS MADE")
+        self.log.debug("Connection made to EWBF terminal.")
 
     def connectionLost(self, reason: failure.Failure) -> None:
         if self._response_d:
-            print("CONNECTION DEAD")
+            self.log.debug("Connection has been lost.")
             self._response_d.errback(reason)
 
 
