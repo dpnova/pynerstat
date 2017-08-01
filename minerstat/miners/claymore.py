@@ -58,6 +58,9 @@ class UbqClaymoreMiner(EthClaymoreMiner):
 
 @implementer(IPlugin, IMiner)
 class ZecClaymoreMiner:
+
+    log = Logger()
+
     name = "claymore-zec"
     folder_name = "claymore-zec"
     db = "zec_conf"
@@ -65,3 +68,11 @@ class ZecClaymoreMiner:
     coin = ""
     command = "SWITCHTOZEC"
     execute = "start.bash"
+    config_template = "{0}"
+
+    async def fetch_logs(self) -> bytes:
+        res = await treq.get("http://localhost:3333").addErrback(self.log.info)
+        if res:
+            text = await res.content()
+            return text
+        return bytes()
