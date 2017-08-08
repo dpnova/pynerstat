@@ -30,6 +30,13 @@ class EthClaymoreMiner:
 @implementer(IPlugin, IMiner)
 class AlgoClaymoreMiner(EthClaymoreMiner):
     name = "algo"
+    coin = ""
+
+
+@implementer(IPlugin, IMiner)
+class DualClaymoreMiner(AlgoClaymoreMiner):
+    name = "algo"
+    db = "null"
 
 
 @implementer(IPlugin, IMiner)

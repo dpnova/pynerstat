@@ -120,7 +120,7 @@ class MinerStatRemoteProtocol:
                 "worker": "{}.{}".format(
                     self.config.accesskey,
                     self.config.worker),
-                "miner": coin.name,
+                "miner": coin.folder_name,
                 "os": platform.system().lower()},
         )
         self.log.debug("remote command: {}".format(repr(content)))
@@ -140,7 +140,7 @@ class MinerStatRemoteProtocol:
                 "worker": "{}.{}".format(
                     self.config.accesskey,
                     self.config.worker),
-                "miner": coin.name,
+                "miner": coin.folder_name,
                 "os": platform.system().lower()},
             data={"mes": ""}
         )

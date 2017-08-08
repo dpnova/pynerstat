@@ -15,6 +15,7 @@ import asyncio
 from twisted.plugin import getPlugins
 from minerstat.miners.base import IMiner, MinerUtils
 from minerstat.miners.claymore import AlgoClaymoreMiner
+from minerstat.miners.claymore import DualClaymoreMiner
 
 
 class MinerProcessProtocol(ProcessProtocol):
@@ -30,14 +31,17 @@ class MinerProcessProtocol(ProcessProtocol):
         self.on_started.callback(None)
 
     def outReceived(self, data):
-        print(data)
+        pass
+        # print(data)
 
     def errReceived(self, data):
-        print(data)
+        pass
+        # print(data)
 
     def processExited(self, status: Failure):
         self.log.debug(
             "miner process has exited with status: {status}", status=status)
+        self.on_ended.callback(status.value)
 
     def processEnded(self, status: Failure):
         self.log.debug(
@@ -71,6 +75,7 @@ class Rig:
             lambda: defer.ensureDeferred(self.mainloop()))
         self._coin_lock = asyncio.Lock()
         self._current_coin = None  # type: Optional[IMiner]
+        self._last_dr = 'null'
 
     def reboot(self) -> None:
         """
@@ -97,8 +102,16 @@ class Rig:
 
     async def load_configured_miner(self) -> IMiner:
         miner_coins = getPlugins(IMiner)  # type: Iterable[IMiner]
+        bq, dr = await self.remote.algoinfo()
         for coin in miner_coins:
+            print(coin.name, dr, coin, self.config.client)
             if coin.name == self.config.client:
+                if coin.name == "algo":
+                    if dr != "null" and not isinstance(
+                            coin, DualClaymoreMiner):
+                        print("skipping")
+                        continue
+
                 with (await self._coin_lock):
                     self.log.debug(
                         "Setting current coin to {0}"
@@ -124,6 +137,11 @@ class Rig:
         """call to self.remote.check_algo"""
         bqt, bq, dr = await self.remote.algo_check()
         print("check algorithms", bqt, bq, dr)
+        if dr != self._last_dr:
+            self._last_dr = dr
+            coin = DualClaymoreMiner()
+            await self.remote.dlconf(coin)
+            await self.setup_miner(coin)
 
     async def setup_miner(self, coin: IMiner) -> None:
         with (await self._coin_lock):
@@ -169,8 +187,11 @@ class Rig:
         await self._process_protocol.on_started
 
     async def stop_miner(self) -> None:
+        print("before")
         if self._process_protocol.connected:
+            print("then")
             await self._process_protocol.stop_it()
+            print("after")
 
     @defer.inlineCallbacks
     def miner_ended(

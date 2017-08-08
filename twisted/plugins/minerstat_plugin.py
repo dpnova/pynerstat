@@ -16,6 +16,7 @@ from minerstat.miners.claymore import MusicClaymoreMiner
 from minerstat.miners.claymore import UbqClaymoreMiner
 from minerstat.miners.claymore import ZecClaymoreMiner
 from minerstat.miners.claymore import AlgoClaymoreMiner
+from minerstat.miners.claymore import DualClaymoreMiner
 
 
 from minerstat.miners.ewbf import EWBFZecMiner
@@ -30,6 +31,7 @@ zec = ZecClaymoreMiner()
 ewbf = EWBFZecMiner()
 sg = SGMiner()
 algo = AlgoClaymoreMiner()
+dual = DualClaymoreMiner()
 
 
 class Options(usage.Options):
