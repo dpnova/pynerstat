@@ -1,8 +1,9 @@
 from twisted.trial import unittest
 from minerstat.service import MinerStatService
 from minerstat.rig import Rig
-from minerstat.remote import MinerStatRemoteProtocol
+from minerstat.remote import MinerStatRemoteProtocol, Command
 from minerstat.utils import Config
+from minerstat.miners.claymore import EthClaymoreMiner
 from twisted.internet import task, defer
 from mock import Mock, create_autospec
 import treq
@@ -43,6 +44,10 @@ class MinerStatServiceTest(unittest.TestCase):
 
 class MinerStatRemoteProtocolTest(unittest.TestCase):
 
+    def setUp(self):
+        self.config = Config("a", "b", "w", "p")
+        self.prot = MinerStatRemoteProtocol(self.config)
+
     def test_algoinfo(self):
         pass
 
@@ -52,7 +57,7 @@ class MinerStatRemoteProtocolTest(unittest.TestCase):
     def test_send_log(self):
         pass
 
-    def algo_check(self):
+    def test_algo_check(self):
         pass
 
     def test_dispatch_remote_command(self):
@@ -60,3 +65,16 @@ class MinerStatRemoteProtocolTest(unittest.TestCase):
 
     def test_poll_remote(self):
         pass
+
+    def test_make_full_url(self):
+        print(self.prot.make_full_url("foobar"))
+
+
+class CommandTest(unittest.TestCase):
+
+    def test_init(self):
+        command = Command("foo", None)
+        self.assertTrue(command)
+        coin = EthClaymoreMiner()
+        command2 = Command("foo", coin)
+        self.assertTrue(command2)

@@ -137,7 +137,7 @@ class Rig:
     async def check_algorithms(self) -> None:
         """call to self.remote.check_algo"""
         bqt, bq, dr = await self.remote.algo_check()
-        print("check algorithms", bqt, bq, dr)
+        self.log.info("check algorithms", bqt, bq, dr)
         if not isinstance(self._current_coin, DualClaymoreMiner):
             if self._last_bq != bq:
                 self._last_bq = bq
@@ -146,10 +146,10 @@ class Rig:
         if dr != self._last_dr:
             self._last_dr = dr
             if dr[1] == "null":
-                print("disable dual mining")
+                self.log.info("disable dual mining")
                 coin = AlgoClaymoreMiner()
             else:
-                print("enable dual mining")
+                self.log.info("enable dual mining")
                 coin = DualClaymoreMiner()
             await self.remote.dlconf(coin)
             await self.setup_miner(coin)
@@ -198,11 +198,8 @@ class Rig:
         await self._process_protocol.on_started
 
     async def stop_miner(self) -> None:
-        print("before")
         if self._process_protocol.connected:
-            print("then")
             await self._process_protocol.stop_it()
-            print("after")
 
     @defer.inlineCallbacks
     def miner_ended(
