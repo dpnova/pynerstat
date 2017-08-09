@@ -32,11 +32,11 @@ class MinerProcessProtocol(ProcessProtocol):
 
     def outReceived(self, data):
         pass
-        # print(data)
+        print(data)
 
     def errReceived(self, data):
         pass
-        # print(data)
+        print(data)
 
     def processExited(self, status: Failure):
         self.log.debug(
@@ -76,6 +76,7 @@ class Rig:
         self._coin_lock = asyncio.Lock()
         self._current_coin = None  # type: Optional[IMiner]
         self._last_dr = 'null'
+        self._last_bq = 'null'
 
     def reboot(self) -> None:
         """
@@ -90,7 +91,7 @@ class Rig:
 
     async def start(self) -> None:
         self.header()
-        await self.load_configured_miner()
+        await self.load_configured_miner(None, None)
         self.log.info("About to announce.")
         await self.remote.announce(self._current_coin)
         await self.start_miner()
@@ -100,16 +101,16 @@ class Rig:
         self._looper.stop()
         await self.stop_miner()
 
-    async def load_configured_miner(self) -> IMiner:
+    async def load_configured_miner(
+            self, bq: Optional[str], dr: Optional[str]) -> IMiner:
         miner_coins = getPlugins(IMiner)  # type: Iterable[IMiner]
-        bq, dr = await self.remote.algoinfo()
+        if not (bq and dr):
+            bq, dr = await self.remote.algoinfo()
         for coin in miner_coins:
-            print(coin.name, dr, coin, self.config.client)
             if coin.name == self.config.client:
                 if coin.name == "algo":
                     if dr != "null" and not isinstance(
                             coin, DualClaymoreMiner):
-                        print("skipping")
                         continue
 
                 with (await self._coin_lock):
@@ -137,9 +138,19 @@ class Rig:
         """call to self.remote.check_algo"""
         bqt, bq, dr = await self.remote.algo_check()
         print("check algorithms", bqt, bq, dr)
+        if not isinstance(self._current_coin, DualClaymoreMiner):
+            if self._last_bq != bq:
+                self._last_bq = bq
+                await self.load_configured_miner(bq=bq[0], dr=dr[0])
+
         if dr != self._last_dr:
             self._last_dr = dr
-            coin = DualClaymoreMiner()
+            if dr[1] == "null":
+                print("disable dual mining")
+                coin = AlgoClaymoreMiner()
+            else:
+                print("enable dual mining")
+                coin = DualClaymoreMiner()
             await self.remote.dlconf(coin)
             await self.setup_miner(coin)
 
