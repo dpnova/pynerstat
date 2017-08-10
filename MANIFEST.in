@@ -1,0 +1,7 @@
+include README.md LICENSE tox.ini .coveragerc
+recursive-include docs *
+prune docs/_build
+exclude .travis.yml
+exclude .readthedocs.yml
+
+global-exclude .DS_Store *.pyc
