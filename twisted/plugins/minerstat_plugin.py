@@ -21,6 +21,7 @@ from minerstat.miners.claymore import DualClaymoreMiner
 
 from minerstat.miners.ewbf import EWBFZecMiner
 from minerstat.miners.sgminer import SGMiner
+import os.path
 
 eth = EthClaymoreMiner()
 etc = EtcClaymoreMiner()
@@ -36,7 +37,7 @@ dual = DualClaymoreMiner()
 
 class Options(usage.Options):
     optParameters = [
-        ["config", "c", "config.ini", "Load config from here."],
+        ["config", "c", "~/.minerstat", "Load config from here."],
         ["section", "s", "main", "Use this section of the config."]
     ]
 
@@ -52,6 +53,7 @@ class MinerServiceMaker:
         Construct a minerstat server.
         """
         config_path = options.get("config")  # Type: str
+        config_path = os.path.expanduser(config_path)
         config_section = options.get("section")  # Type: str
         config = Config.from_path(config_path, config_section)
         remote = MinerStatRemoteProtocol(config)

@@ -1,0 +1,6 @@
+#!/usr/bin/env sh
+
+python setup.py install
+mkdir ~/.minerstat
+cp config.template.ini ~/.minerstat/config.ini
+echo Edit your config at ~/.minerstat/config.ini
