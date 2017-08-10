@@ -42,5 +42,6 @@ if __name__ == "__main__":
         description="A fully featured client for minerstat.com",
         license="Apache 2.0",
         url="https://github.com/dpnova/minerstat",
-        long_description=readme
+        long_description=readme,
+        scripts=['bin/minerstat']
     )
