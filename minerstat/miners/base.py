@@ -26,6 +26,7 @@ class MinerUtils:
     def miner_path(self) -> str:
         return os.path.join(
             self.config.path,
+            "minerstat",
             "clients",
             self.coin.folder_name)
 

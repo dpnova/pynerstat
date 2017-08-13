@@ -37,7 +37,7 @@ dual = DualClaymoreMiner()
 
 class Options(usage.Options):
     optParameters = [
-        ["config", "c", "~/.minerstat", "Load config from here."],
+        ["config", "c", "~/.minerstat/config.ini", "Load config from here."],
         ["section", "s", "main", "Use this section of the config."]
     ]
 

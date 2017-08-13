@@ -30,7 +30,10 @@ class Config:
     @classmethod
     def from_configparser(cls, parser: ConfigParser, section: str):
         conf = parser[section]
-        return cls(**dict(conf))
+        if "path" not in conf:
+            conf['path'] = os.path.join(os.path.dirname(__file__), "..")
+        self = cls(**dict(conf))
+        return self
 
     @classmethod
     def from_path(cls, path: str, section: str):

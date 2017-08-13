@@ -1,2 +1,6 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
+if [[ "$VIRTUAL_ENV" == "" ]]
+then
+  . ~/.minerstat/virtualenv/bin/activate
+fi
 exec twistd -n minerstat-linux

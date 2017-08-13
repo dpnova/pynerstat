@@ -1,6 +1,11 @@
 #!/usr/bin/env sh
 
-python setup.py install
 mkdir ~/.minerstat
+virtualenv -p `which python3` ~/.minerstat/virtualenv
+. ~/.minerstat/virtualenv/bin/activate
+pip install -r requirements.txt
+python setup.py install
 cp config.template.ini ~/.minerstat/config.ini
+ln -sf ~/.minerstat/virtualenv/bin/minerstat ~/.minerstat/run
 echo Edit your config at ~/.minerstat/config.ini
+echo After that you can run ~/.minerstat/run
