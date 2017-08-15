@@ -110,7 +110,7 @@ if __name__ == "__main__":
         classifiers=classifiers,
         description="A fully featured client for minerstat.com",
         license="Apache 2.0",
-        url="https://github.com/dpnova/minerstat",
+        url="https://github.com/dpnova/pynerstat",
         long_description=readme,
         scripts=['bin/minerstat'],
         cmdclass={
