@@ -41,24 +41,28 @@ class DualClaymoreMiner(AlgoClaymoreMiner):
 
 @implementer(IPlugin, IMiner)
 class EtcClaymoreMiner(EthClaymoreMiner):
+    name = "claymore-etc"
     coin = "etc"
     command = "SWITCHTOETC"
 
 
 @implementer(IPlugin, IMiner)
 class ExpClaymoreMiner(EthClaymoreMiner):
+    name = "claymore-exp"
     coin = "exp"
     command = "SWITCHTOEXP"
 
 
 @implementer(IPlugin, IMiner)
 class MusicClaymoreMiner(EthClaymoreMiner):
+    name = "claymore-music"
     coin = "music"
     command = "SWITCHTOMUSIC"
 
 
 @implementer(IPlugin, IMiner)
 class UbqClaymoreMiner(EthClaymoreMiner):
+    name = "claymore-ubq"
     coin = "ubq"
     command = "SWITCHTOUBQ"
 

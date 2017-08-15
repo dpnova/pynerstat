@@ -2,6 +2,7 @@ from typing import Generator
 from twisted.internet import defer
 from configparser import ConfigParser
 import os.path
+from typing import Optional
 
 InlineCallbacks = Generator[defer.Deferred, defer.Deferred, None]
 
@@ -19,9 +20,20 @@ class Config:
             accesskey: str,
             worker: str,
             path: str,
+            db: Optional[str] = None,
             api_base: str = "https://minerstat.com/",
     ) -> None:
         self.client = client
+        self.db = db
+        if not db:
+            if client == "claymore-eth":
+                self.db = "eth_conf"
+            elif client == "claymore-zec":
+                self.db = "zec_conf"
+            elif client == "ewbf-zec":
+                self.db = "ezec_conf"
+            elif client == "sgminer-gm":
+                self.db = "sgg_conf"
         self.accesskey = accesskey
         self.worker = worker
         self.path = path
