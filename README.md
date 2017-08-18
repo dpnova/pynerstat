@@ -2,13 +2,26 @@
 
 A port/reimagining of the linux minerstat.com client: https://github.com/coinscrow/minerstat-linux
 
-Still a work in progress, not ready for use yet as I fugure out some of the quirks with the minerstat service (kinda reverse engineering it)
+*Still a work in progress*
 
-To get started:
-
-* make sure you have pip3 and libffi installed: `sudo apt-get install python3-pip libffi-dev python-virtualenv`
-* run `bin/install`
-* edit `~/.minerstat/config.ini` and make sure you have your token from minerstat.com set up properly
-* run `minerstat` in your terminal
+Testers highly appreciated! Please feel free to open issues if you find anything or contact us on
+the minerstat slack. https://minerstat.com/slack.php
 
 
+### To get started:
+
+* make sure you have python3, pip3, virtualenv, libffi and libssl already installed:
+    ``` shell
+    sudo apt-get -y install build-essentials libssl-dev libffi-dev \
+        python3-dev python3-pip python-virtualenv
+    ```
+
+* then to install *pynerstat* run:
+    ```shell
+    curl https://raw.githubusercontent.com/dpnova/pynerstat/master/bin/install | bash
+    ```
+
+* now you can edit your `~/.minerstat/config.ini` to change your access token, worker name or
+  default miner client
+
+* or run `~/.minerstat/run` in your terminal to start mining
