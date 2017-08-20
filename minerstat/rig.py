@@ -142,7 +142,7 @@ class Rig:
     async def check_algorithms(self) -> None:
         """call to self.remote.check_algo"""
         bqt, bq, dr = await self.remote.algo_check()
-        self.log.info("check algorithms", bqt, bq, dr)
+        self.log.info("check algorithms {} {} {}".format(bqt, bq, dr))
         if not isinstance(self._current_coin, DualClaymoreMiner):
             if self._last_bq != bq:
                 self._last_bq = bq
