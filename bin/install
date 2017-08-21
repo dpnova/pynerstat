@@ -131,8 +131,7 @@ run_install () {
     if [[ ! -f $MINERSTAT_HOME/config.ini ]]
     then
 
-        [[ -z $SKIP_PROMPTS ]] && SKIP_PROMPTS=
-        if [[ ! -z $SKIP_PROMPTS ]]
+        if [[ ! -z ${SKIP_PROMPTS+""} ]]
         then
             # skipping prompt -> copy template config
             cp "$INSTALL_HOME/config.template.ini" "$MINERSTAT_HOME/config.ini"
