@@ -1,11 +1,184 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
-mkdir ~/.minerstat
-virtualenv -p `which python3` ~/.minerstat/virtualenv
-. ~/.minerstat/virtualenv/bin/activate
-pip install -r requirements.txt
-python setup.py install
-cp config.template.ini ~/.minerstat/config.ini
-ln -sf ~/.minerstat/virtualenv/bin/minerstat ~/.minerstat/run
-echo Edit your config at ~/.minerstat/config.ini
-echo After that you can run ~/.minerstat/run
+# This is the Pynerstat install script!
+#
+# To install:
+#   - Make sure you have python3, pip3, virtualenv, libffi and libssl installed:
+#
+#     Ubuntu/Debian distributions:
+#        sudo apt-get install build-essentials libssl-dev libffi-dev python3-dev python3-pip python-virtualenv
+#
+#   - Then open a terminal and type:
+#   
+#       curl https://raw.githubusercontent.com/dpnova/pynerstat/master/bin/install | bash
+#
+# To skip prompts set the environment variable SKIP_PROMPTS=true before running the above command.
+#   export SKIP_PROMPTS=true
+#
+# or in one line
+#   curl https://raw.githubusercontent.com/dpnova/pynerstat/master/bin/install | SKIP_PROMPTS=true bash
+#   
+#
+# If you encounter any problems please either:
+#   - Join the minerstat slack channel and ask us at: https://minerstat.com/slack.php
+#   - Create an issue on Github at: https://github.com/dpnova/pynerstat/issues/new
+#       with the details of your problem the more information the better!
+
+
+# Wrap script in a function so that it won't be executed until the entire script is downloaded.
+run_install () {
+
+    set -e        # Exit immediately if a command exists with a non-zero status
+    set -u        # Treat unset variables as an error when substituting
+
+    # Redirect stdout to stderr for science
+    exec 1>&2
+
+    if [[ -z $HOME || ! -d $HOME ]]
+    then
+        echo "I require the \$HOME environment variable be set."
+        exit 1
+    fi
+
+    UNAME=$(uname)
+    if [[ "$UNAME" != "Linux" && "$UNAME" != "Darwin" ]]
+    then
+        echo "Sorry, this OS is not supported yet via this installer."
+        exit 1
+    fi
+
+    # basic check to see if the dependencies exist
+    DEPS=(curl python3 virtualenv)
+    for arg in $DEPS
+    do
+        # source: https://stackoverflow.com/a/677212/712632
+        if ! hash "$arg" 2>/dev/null
+        then
+            echo >&2 "I require $arg but it's not installed. Aborting"
+            exit 1
+        fi
+    done
+
+    PYTHON_BIN=$(command -v python3)
+    MINERSTAT_HOME="$HOME/.minerstat"
+    VENV_HOME="$MINERSTAT_HOME/virtualenv"
+
+    # haven't tested on OSX but this supposably helps bash < 4.x.x
+    # source: https://unix.stackexchange.com/a/84980
+    INSTALL_HOME=$(mktemp -d 2>/dev/null || mktemp -d -t "minerstat")
+    if [[ ! -d $INSTALL_HOME ]]
+    then
+        echo "Failed to create temporary directory"
+        exit 1
+    fi
+
+    TARBALL_URL=https://api.github.com/repos/dpnova/pynerstat/tarball/master
+    TARBALL_FILE=$INSTALL_HOME/pynerstat.tar.gz
+
+    cleanUp () {
+        rm -r "$INSTALL_HOME"
+    }
+
+    trap "cleanUp; echo \"Installation failed.\"; exit 1" INT TERM EXIT
+
+    echo "Downloading Pynerstat distribution"
+    ATTEMPTS=0
+    MAX_ATTEMPTS=10
+    RETRY_DELAY_SECS=5
+    set +e        # Don't want to quit the installer if any attempt fails
+    # keep trying to curl the file until it works (resuming where possible)
+    while [[ $ATTEMPTS -lt $MAX_ATTEMPTS ]]
+    do
+        ATTEMPTS=$((ATTEMPTS + 1))
+
+        if curl -L --fail --continue-at - "$TARBALL_URL" --output "$TARBALL_FILE"
+        then
+            break
+        fi
+
+        echo "Retrying download in $RETRY_DELAY_SECS seconds..."
+        sleep $RETRY_DELAY_SECS
+    done
+    set -e
+
+    # check if the file and extract it
+    [[ -e $TARBALL_FILE ]] && tar -xzf "$TARBALL_FILE" -C "$INSTALL_HOME" --strip=1 -o
+
+    # change directory to install home for the setup.py install
+    cd "$INSTALL_HOME"
+
+    # Create ~/.minerstat directory
+    [[ ! -d $MINERSTAT_HOME ]] && mkdir -p "$MINERSTAT_HOME"
+
+    # create the virtualenv
+    virtualenv --clear -p "$PYTHON_BIN" "$VENV_HOME"
+
+    # Relax restrictions during this part because ¯\_(ツ)_/¯
+    set +e
+    set +u
+    . "$VENV_HOME/bin/activate"
+    pip install -r "$INSTALL_HOME/requirements.txt"
+    python "$INSTALL_HOME/setup.py" install
+    set -e
+    set -u
+    # Aand we're back
+
+    # setup runner
+    [[ ! -L $MINERSTAT_HOME/run ]] && \
+        ln -sf "$VENV_HOME/bin/minerstat" "$MINERSTAT_HOME/run"
+
+    # skip config stuff if one already exists
+    if [[ ! -f $MINERSTAT_HOME/config.ini ]]
+    then
+
+        if [[ ! -z ${SKIP_PROMPTS+""} ]]
+        then
+            # skipping prompt -> copy template config
+            cp "$INSTALL_HOME/config.template.ini" "$MINERSTAT_HOME/config.ini"
+            echo "Copied in config template, you will need to edit it at:"
+            echo "    $MINERSTAT_HOME/config.ini"
+        else
+            # otherwise help user generate a config.ini
+            read -p "Minerstat.com ACCESS KEY (default: CHANGEME): " access_key
+            [[ -z $access_key ]] && access_key=CHANGEME
+
+            read -p "Worker Name (default: CHANGEME): " worker_name
+            [[ -z $worker_name ]] && worker_name=CHANGEME
+
+            cat <<EOF
+Choose your default mining client.
+
+AMD          : claymore-zec
+NVIDIA       : ewbf-zec
+AMD & NVIDIA : claymore-eth, claymore-etc, claymore-exp, claymore-music, claymore-ubq
+PROFIT ALGO  : algo
+EOF
+            read -p "Client? (default: claymore-eth) " mining_client
+            [[ -z $mining_client ]] && mining_client=claymore-eth
+
+            cat <<EOF > "$MINERSTAT_HOME/config.ini"
+# CONFIGURATION GENERATED DURING INSTALLATION
+[main]
+accesskey = $access_key
+worker = $worker_name
+client = $mining_client
+EOF
+        fi
+    fi
+
+    echo "Pynerstat install success!"
+    echo "You can start by running:"
+    echo "    $MINERSTAT_HOME/run"
+
+    # cleanup temporary files
+    cleanUp
+
+    trap - INT TERM EXIT
+}
+
+run_install
+
+# Credits/References:
+# Install script based on: https://install.meteor.com/
+# Some robustness best practices learned from:
+#   http://www.davidpashley.com/articles/writing-robust-shell-scripts/
