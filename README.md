@@ -27,3 +27,5 @@ curl https://raw.githubusercontent.com/dpnova/pynerstat/master/bin/install | bas
   default miner client
 
 * or run `~/.minerstat/run` in your terminal to start mining
+
+* if you don't like running `~/.minerstat/run` you could add `alias minerstat=~/.minerstat/run` to your `~/.bashrc` or equivalent.
