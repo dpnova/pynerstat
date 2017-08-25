@@ -12,7 +12,7 @@ the minerstat slack. https://minerstat.com/slack.php
 
 * make sure you have python3, pip3, virtualenv, libffi and libssl already installed:
     ``` shell
-    sudo apt-get -y install build-essentials libssl-dev libffi-dev \
+    sudo apt-get -y install build-essential libssl-dev libffi-dev \
         python3-dev python3-pip python-virtualenv
     ```
 
